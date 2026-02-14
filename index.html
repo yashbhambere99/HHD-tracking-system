@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HDD Repair Tracking</title>
+<style>
+body {font-family: Arial; background:#f4f6f9;}
+.container {width:1100px;margin:40px auto;background:white;padding:30px;border-radius:8px;}
+.row {display:flex;gap:20px;margin-bottom:10px;}
+.col {flex:1;}
+input,select,button {padding:8px;width:100%;}
+button {background:#2c7be5;color:white;border:none;cursor:pointer;}
+button:hover {background:#1a68d1;}
+.hidden {display:none;}
+table {width:100%;border-collapse:collapse;margin-top:20px;}
+th,td {border:1px solid #ddd;padding:8px;}
+th {background:#2c7be5;color:white;}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>HDD Repair Tracking System</h2>
+
+<select id="mode" onchange="switchMode()">
+<option value="dispatch">Dispatch to Service Centre</option>
+<option value="receive">Receive After Repair</option>
+</select>
+
+<!-- ================= DISPATCH SECTION ================= -->
+<div id="dispatchSection">
+
+<div class="row">
+<div class="col"><input type="text" id="make" placeholder="Make"></div>
+<div class="col"><input type="text" id="model" placeholder="Model"></div>
+</div>
+
+<div id="serialContainer"></div>
+<button onclick="addSerial()">Add Serial</button>
+
+<div class="row">
+<div class="col"><input type="text" id="locationName" placeholder="Location Name"></div>
+<div class="col">
+<select id="facilityEntity">
+<option value="">Select Facility Entity</option>
+<option value="WHS">WHS</option>
+<option value="CPC">CPC</option>
+<option value="HP">HP</option>
+</select>
+</div>
+</div>
+
+<div class="row">
+<div class="col"><input type="text" id="receivedMailSubject" placeholder="Received Mail Subject from Operations"></div>
+<div class="col"><input type="date" id="receivedDate"></div>
+</div>
+
+<div class="row">
+<div class="col"><input type="text" id="dispatchMailSubject" placeholder="Dispatch Mail Subject"></div>
+<div class="col"><input type="text" id="dispatchDocket" placeholder="Dispatch Docket Number"></div>
+</div>
+
+<div class="row">
+<div class="col"><input type="date" id="dispatchDate"></div>
+<div class="col"><input type="text" id="dispatchCourier" placeholder="Dispatch Courier Partner Name"></div>
+</div>
+
+<button onclick="submitDispatch()">Submit Dispatch</button>
+</div>
+
+
+<!-- ================= RECEIVE SECTION ================= -->
+<div id="receiveSection" class="hidden">
+
+<input type="text" id="searchDispatchMail" placeholder="Enter Dispatch Mail Subject">
+<button onclick="searchDispatch()">Search</button>
+
+<div id="resultArea"></div>
+
+<div class="row">
+<div class="col"><input type="date" id="receivedDatePostRepair"></div>
+<div class="col"><input type="text" id="receiveDocket" placeholder="Receive Docket Number"></div>
+<div class="col"><input type="text" id="receiveCourier" placeholder="Receive Courier Partner Name"></div>
+</div>
+
+<button onclick="submitReceive()">Mark as Received</button>
+
+</div>
+
+</div>
+
+<script>
+
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuceQM7A5zGBeZoexD5QKK2CInGYomKe6XBMkURe3jIRFm8sAakDxwJ5BKbtCNnZRnBg/exec";
+
+let selectedRows = [];
+
+function switchMode(){
+let mode=document.getElementById("mode").value;
+dispatchSection.classList.toggle("hidden",mode!=="dispatch");
+receiveSection.classList.toggle("hidden",mode!=="receive");
+}
+
+function addSerial(){
+let div=document.createElement("div");
+div.classList.add("row");
+div.innerHTML=`
+<div class="col"><input type="text" placeholder="Serial Number" class="serial"></div>
+<div class="col"><input type="text" placeholder="Identify Problem" class="problem"></div>`;
+serialContainer.appendChild(div);
+}
+
+function submitDispatch(){
+
+let serials=[];
+let s=document.getElementsByClassName("serial");
+let p=document.getElementsByClassName("problem");
+
+if(s.length===0){
+alert("Add at least one serial number");
+return;
+}
+
+for(let i=0;i<s.length;i++){
+if(!s[i].value){
+alert("Serial Number cannot be empty");
+return;
+}
+serials.push({serialNumber:s[i].value,problem:p[i].value});
+}
+
+fetch(WEB_APP_URL,{
+method:"POST",
+body:JSON.stringify({
+type:"dispatch",
+make:make.value,
+model:model.value,
+locationName:locationName.value,
+facilityEntity:facilityEntity.value,
+receivedMailSubject:receivedMailSubject.value,
+receivedDate:receivedDate.value,
+dispatchMailSubject:dispatchMailSubject.value,
+dispatchDocket:dispatchDocket.value,
+dispatchDate:dispatchDate.value,
+dispatchCourier:dispatchCourier.value,
+serials:serials
+})
+}).then(res=>res.json()).then(res=>{
+alert("Case Created: "+res.caseId);
+location.reload();
+});
+}
+
+function searchDispatch(){
+
+fetch(WEB_APP_URL,{
+method:"POST",
+body:JSON.stringify({
+type:"searchDispatchMail",
+dispatchMailSubject:searchDispatchMail.value
+})
+}).then(res=>res.json()).then(data=>{
+
+selectedRows=[];
+let html="<table><tr><th>Select</th><th>Serial</th><th>Case ID</th></tr>";
+
+data.forEach(item=>{
+html+=`<tr>
+<td><input type="checkbox" value="${item.rowIndex}" onchange="toggleRow(this)"></td>
+<td>${item.serial}</td>
+<td>${item.caseId}</td>
+</tr>`;
+});
+
+html+="</table>";
+resultArea.innerHTML=html;
+});
+}
+
+function toggleRow(cb){
+let value=parseInt(cb.value);
+if(cb.checked){
+if(!selectedRows.includes(value)){
+selectedRows.push(value);
+}
+}else{
+selectedRows=selectedRows.filter(r=>r!==value);
+}
+}
+
+function submitReceive(){
+
+if(selectedRows.length===0){
+alert("Please select at least one serial");
+return;
+}
+
+if(!receivedDatePostRepair.value){
+alert("Please select Received Date Post Repair");
+return;
+}
+
+fetch(WEB_APP_URL,{
+method:"POST",
+body:JSON.stringify({
+type:"receive",
+selectedRows:selectedRows,
+receivedDatePostRepair:receivedDatePostRepair.value,
+receiveDocket:receiveDocket.value,
+receiveCourier:receiveCourier.value
+})
+}).then(res=>res.json()).then(()=>{
+alert("Updated Successfully");
+location.reload();
+});
+}
+
+</script>
+</body>
+</html>
+
