@@ -2,18 +2,47 @@
 <html>
 <head>
 <title>HDD Repair Tracking</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body {font-family: Arial; background:#f4f6f9;}
-.container {width:1100px;margin:40px auto;background:white;padding:30px;border-radius:8px;}
-.row {display:flex;gap:20px;margin-bottom:10px;}
-.col {flex:1;}
-input,select,button {padding:8px;width:100%;}
-button {background:#2c7be5;color:white;border:none;cursor:pointer;}
+body {font-family: Arial; background:#f4f6f9; margin:0;}
+
+.container {
+max-width:1100px;
+width:95%;
+margin:20px auto;
+background:white;
+padding:25px;
+border-radius:8px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.row {display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;}
+.col {flex:1;min-width:250px;}
+
+input,select,button {padding:8px;width:100%;box-sizing:border-box;}
+
+button {
+background:#2c7be5;
+color:white;
+border:none;
+cursor:pointer;
+margin-top:10px;
+}
+
 button:hover {background:#1a68d1;}
+button:disabled {background:#999;cursor:not-allowed;}
+
 .hidden {display:none;}
+
 table {width:100%;border-collapse:collapse;margin-top:20px;}
-th,td {border:1px solid #ddd;padding:8px;}
+th,td {border:1px solid #ddd;padding:8px;text-align:left;}
 th {background:#2c7be5;color:white;}
+
+@media(max-width:768px){
+.row {flex-direction:column;}
+}
 </style>
 </head>
 <body>
@@ -36,7 +65,7 @@ th {background:#2c7be5;color:white;}
 </div>
 
 <div id="serialContainer"></div>
-<button onclick="addSerial()">Add Serial</button>
+<button type="button" onclick="addSerial()">Add Serial</button>
 
 <div class="row">
 <div class="col"><input type="text" id="locationName" placeholder="Location Name"></div>
@@ -65,7 +94,8 @@ th {background:#2c7be5;color:white;}
 <div class="col"><input type="text" id="dispatchCourier" placeholder="Dispatch Courier Partner Name"></div>
 </div>
 
-<button onclick="submitDispatch()">Submit Dispatch</button>
+<button type="button" id="dispatchBtn" onclick="submitDispatch()">Submit Dispatch</button>
+
 </div>
 
 
@@ -73,7 +103,7 @@ th {background:#2c7be5;color:white;}
 <div id="receiveSection" class="hidden">
 
 <input type="text" id="searchDispatchMail" placeholder="Enter Dispatch Mail Subject">
-<button onclick="searchDispatch()">Search</button>
+<button type="button" onclick="searchDispatch()">Search</button>
 
 <div id="resultArea"></div>
 
@@ -83,7 +113,7 @@ th {background:#2c7be5;color:white;}
 <div class="col"><input type="text" id="receiveCourier" placeholder="Receive Courier Partner Name"></div>
 </div>
 
-<button onclick="submitReceive()">Mark as Received</button>
+<button type="button" id="receiveBtn" onclick="submitReceive()">Mark as Received</button>
 
 </div>
 
@@ -110,7 +140,13 @@ div.innerHTML=`
 serialContainer.appendChild(div);
 }
 
+
+// ================= DISPATCH =================
 function submitDispatch(){
+
+let btn = document.getElementById("dispatchBtn");
+btn.disabled = true;
+btn.innerText = "Processing...";
 
 let serials=[];
 let s=document.getElementsByClassName("serial");
@@ -118,12 +154,14 @@ let p=document.getElementsByClassName("problem");
 
 if(s.length===0){
 alert("Add at least one serial number");
+resetDispatchBtn();
 return;
 }
 
 for(let i=0;i<s.length;i++){
 if(!s[i].value){
 alert("Serial Number cannot be empty");
+resetDispatchBtn();
 return;
 }
 serials.push({serialNumber:s[i].value,problem:p[i].value});
@@ -145,12 +183,26 @@ dispatchDate:dispatchDate.value,
 dispatchCourier:dispatchCourier.value,
 serials:serials
 })
-}).then(res=>res.json()).then(res=>{
+})
+.then(res=>res.json())
+.then(res=>{
 alert("Case Created: "+res.caseId);
 location.reload();
+})
+.catch(()=>{
+alert("Something went wrong");
+resetDispatchBtn();
 });
 }
 
+function resetDispatchBtn(){
+let btn=document.getElementById("dispatchBtn");
+btn.disabled=false;
+btn.innerText="Submit Dispatch";
+}
+
+
+// ================= SEARCH =================
 function searchDispatch(){
 
 fetch(WEB_APP_URL,{
@@ -159,7 +211,9 @@ body:JSON.stringify({
 type:"searchDispatchMail",
 dispatchMailSubject:searchDispatchMail.value
 })
-}).then(res=>res.json()).then(data=>{
+})
+.then(res=>res.json())
+.then(data=>{
 
 selectedRows=[];
 let html="<table><tr><th>Select</th><th>Serial</th><th>Case ID</th></tr>";
@@ -177,6 +231,8 @@ resultArea.innerHTML=html;
 });
 }
 
+
+// ================= TOGGLE =================
 function toggleRow(cb){
 let value=parseInt(cb.value);
 if(cb.checked){
@@ -188,15 +244,23 @@ selectedRows=selectedRows.filter(r=>r!==value);
 }
 }
 
+
+// ================= RECEIVE =================
 function submitReceive(){
+
+let btn = document.getElementById("receiveBtn");
+btn.disabled = true;
+btn.innerText = "Processing...";
 
 if(selectedRows.length===0){
 alert("Please select at least one serial");
+resetReceiveBtn();
 return;
 }
 
 if(!receivedDatePostRepair.value){
 alert("Please select Received Date Post Repair");
+resetReceiveBtn();
 return;
 }
 
@@ -209,13 +273,24 @@ receivedDatePostRepair:receivedDatePostRepair.value,
 receiveDocket:receiveDocket.value,
 receiveCourier:receiveCourier.value
 })
-}).then(res=>res.json()).then(()=>{
+})
+.then(res=>res.json())
+.then(()=>{
 alert("Updated Successfully");
 location.reload();
+})
+.catch(()=>{
+alert("Something went wrong");
+resetReceiveBtn();
 });
+}
+
+function resetReceiveBtn(){
+let btn=document.getElementById("receiveBtn");
+btn.disabled=false;
+btn.innerText="Mark as Received";
 }
 
 </script>
 </body>
 </html>
-
