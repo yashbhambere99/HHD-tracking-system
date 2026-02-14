@@ -18,8 +18,8 @@ border-radius:8px;
 box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
 
-.row {display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap;}
-.col {flex:1;min-width:250px;}
+.row {display:flex;gap:15px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
+.col {flex:1;min-width:200px;}
 
 input,select,button {padding:8px;width:100%;box-sizing:border-box;}
 
@@ -34,6 +34,14 @@ margin-top:10px;
 button:hover {background:#1a68d1;}
 button:disabled {background:#999;cursor:not-allowed;}
 
+.removeBtn {
+background:#dc3545;
+padding:8px 12px;
+width:auto;
+}
+
+.removeBtn:hover {background:#b02a37;}
+
 .hidden {display:none;}
 
 table {width:100%;border-collapse:collapse;margin-top:20px;}
@@ -41,7 +49,8 @@ th,td {border:1px solid #ddd;padding:8px;text-align:left;}
 th {background:#2c7be5;color:white;}
 
 @media(max-width:768px){
-.row {flex-direction:column;}
+.row {flex-direction:column;align-items:stretch;}
+.removeBtn {width:100%;}
 }
 </style>
 </head>
@@ -60,12 +69,22 @@ th {background:#2c7be5;color:white;}
 <div id="dispatchSection">
 
 <div class="row">
-<div class="col"><input type="text" id="make" placeholder="Make"></div>
-<div class="col"><input type="text" id="model" placeholder="Model"></div>
+<div class="col">
+<select id="make">
+<option value="">Select Make</option>
+<option value="Urovo">Urovo</option>
+<option value="Newland">Newland</option>
+</select>
 </div>
 
+<div class="col">
+<input type="text" id="model" placeholder="Model">
+</div>
+</div>
+
+
 <div id="serialContainer"></div>
-<button type="button" onclick="addSerial()">Add Serial</button>
+<button type="button" onclick="addSerial()">Add Serial Number</button>
 
 <div class="row">
 <div class="col"><input type="text" id="locationName" placeholder="Location Name"></div>
@@ -81,7 +100,13 @@ th {background:#2c7be5;color:white;}
 
 <div class="row">
 <div class="col"><input type="text" id="receivedMailSubject" placeholder="Received Mail Subject from Operations"></div>
-<div class="col"><input type="date" id="receivedDate"></div>
+<div class="col"><input type="text"
+       id="receivedDate"
+       placeholder="Received Date from Operations"
+       onclick="this.showPicker ? this.showPicker() : this.focus()"
+       onfocus="this.type='date'; this.showPicker && this.showPicker()"
+       onblur="if(!this.value)this.type='text'">
+</div>
 </div>
 
 <div class="row">
@@ -90,11 +115,17 @@ th {background:#2c7be5;color:white;}
 </div>
 
 <div class="row">
-<div class="col"><input type="date" id="dispatchDate"></div>
+<div class="col"><input type="text"
+       id="dispatchDate"
+       placeholder="Dispatch Date - Service Centre"
+       onclick="this.showPicker ? this.showPicker() : this.focus()"
+       onfocus="this.type='date'; this.showPicker && this.showPicker()"
+       onblur="if(!this.value)this.type='text'">
+</div>
 <div class="col"><input type="text" id="dispatchCourier" placeholder="Dispatch Courier Partner Name"></div>
 </div>
 
-<button type="button" id="dispatchBtn" onclick="submitDispatch()">Submit Dispatch</button>
+<button type="button" id="dispatchBtn" onclick="submitDispatch()">Submit Dispatch Details</button>
 
 </div>
 
@@ -108,7 +139,13 @@ th {background:#2c7be5;color:white;}
 <div id="resultArea"></div>
 
 <div class="row">
-<div class="col"><input type="date" id="receivedDatePostRepair"></div>
+<div class="col"><input type="text"
+       id="receivedDatePostRepair"
+       placeholder="Received Date Post Repair"
+       onclick="this.showPicker ? this.showPicker() : this.focus()"
+       onfocus="this.type='date'; this.showPicker && this.showPicker()"
+       onblur="if(!this.value)this.type='text'">
+</div>
 <div class="col"><input type="text" id="receiveDocket" placeholder="Receive Docket Number"></div>
 <div class="col"><input type="text" id="receiveCourier" placeholder="Receive Courier Partner Name"></div>
 </div>
@@ -136,8 +173,14 @@ let div=document.createElement("div");
 div.classList.add("row");
 div.innerHTML=`
 <div class="col"><input type="text" placeholder="Serial Number" class="serial"></div>
-<div class="col"><input type="text" placeholder="Identify Problem" class="problem"></div>`;
+<div class="col"><input type="text" placeholder="Identify Problem" class="problem"></div>
+<div><button type="button" class="removeBtn" onclick="removeSerial(this)">Remove</button></div>
+`;
 serialContainer.appendChild(div);
+}
+
+function removeSerial(btn){
+btn.parentElement.parentElement.remove();
 }
 
 
@@ -231,8 +274,6 @@ resultArea.innerHTML=html;
 });
 }
 
-
-// ================= TOGGLE =================
 function toggleRow(cb){
 let value=parseInt(cb.value);
 if(cb.checked){
@@ -268,6 +309,7 @@ fetch(WEB_APP_URL,{
 method:"POST",
 body:JSON.stringify({
 type:"receive",
+dispatchMailSubject:searchDispatchMail.value,
 selectedRows:selectedRows,
 receivedDatePostRepair:receivedDatePostRepair.value,
 receiveDocket:receiveDocket.value,
