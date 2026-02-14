@@ -7,51 +7,20 @@
 
 <style>
 body {font-family: Arial; background:#f4f6f9; margin:0;}
-
-.container {
-max-width:1100px;
-width:95%;
-margin:20px auto;
-background:white;
-padding:25px;
-border-radius:8px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
-}
-
-.row {display:flex;gap:15px;margin-bottom:10px;flex-wrap:wrap;align-items:center;}
-.col {flex:1;min-width:200px;}
-
-input,select,button {padding:8px;width:100%;box-sizing:border-box;}
-
-button {
-background:#2c7be5;
-color:white;
-border:none;
-cursor:pointer;
-margin-top:10px;
-}
-
+.container {max-width:1100px; width:95%; margin:20px auto; background:white; padding:25px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.row {display:flex; gap:15px; margin-bottom:10px; flex-wrap:wrap; align-items:center;}
+.col {flex:1; min-width:200px;}
+input,select,button {padding:8px; width:100%; box-sizing:border-box;}
+button {background:#2c7be5; color:white; border:none; cursor:pointer; margin-top:10px;}
 button:hover {background:#1a68d1;}
-button:disabled {background:#999;cursor:not-allowed;}
-
-.removeBtn {
-background:#dc3545;
-padding:8px 12px;
-width:auto;
-}
-
+button:disabled {background:#999; cursor:not-allowed;}
+.removeBtn {background:#dc3545; padding:8px 12px; width:auto;}
 .removeBtn:hover {background:#b02a37;}
-
 .hidden {display:none;}
-
-table {width:100%;border-collapse:collapse;margin-top:20px;}
-th,td {border:1px solid #ddd;padding:8px;text-align:left;}
-th {background:#2c7be5;color:white;}
-
-@media(max-width:768px){
-.row {flex-direction:column;align-items:stretch;}
-.removeBtn {width:100%;}
-}
+table {width:100%; border-collapse:collapse; margin-top:20px;}
+th,td {border:1px solid #ddd; padding:8px; text-align:left;}
+th {background:#2c7be5; color:white;}
+@media(max-width:768px){.row {flex-direction:column; align-items:stretch;} .removeBtn {width:100%;}}
 </style>
 </head>
 <body>
@@ -77,11 +46,8 @@ th {background:#2c7be5;color:white;}
 </select>
 </div>
 
-<div class="col">
-<input type="text" id="model" placeholder="Model">
+<div class="col"><input type="text" id="model" placeholder="Model"></div>
 </div>
-</div>
-
 
 <div id="serialContainer"></div>
 <button type="button" onclick="addSerial()">Add Serial Number</button>
@@ -129,12 +95,12 @@ th {background:#2c7be5;color:white;}
 
 </div>
 
-
 <!-- ================= RECEIVE SECTION ================= -->
 <div id="receiveSection" class="hidden">
 
-<input type="text" id="searchDispatchMail" placeholder="Enter Dispatch Mail Subject">
-<button type="button" onclick="searchDispatch()">Search</button>
+<input type="text" id="searchDispatch" placeholder="Enter Dispatch Mail Subject or Docket Number">
+<button type="button" id="searchBtn" onclick="searchDispatch()">Search</button>
+
 
 <div id="resultArea"></div>
 
@@ -153,186 +119,138 @@ th {background:#2c7be5;color:white;}
 <button type="button" id="receiveBtn" onclick="submitReceive()">Mark as Received</button>
 
 </div>
-
 </div>
 
 <script>
-
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuceQM7A5zGBeZoexD5QKK2CInGYomKe6XBMkURe3jIRFm8sAakDxwJ5BKbtCNnZRnBg/exec";
 
 let selectedRows = [];
 
 function switchMode(){
-let mode=document.getElementById("mode").value;
-dispatchSection.classList.toggle("hidden",mode!=="dispatch");
-receiveSection.classList.toggle("hidden",mode!=="receive");
+    let mode = document.getElementById("mode").value;
+    dispatchSection.classList.toggle("hidden", mode !== "dispatch");
+    receiveSection.classList.toggle("hidden", mode !== "receive");
 }
 
 function addSerial(){
-let div=document.createElement("div");
-div.classList.add("row");
-div.innerHTML=`
-<div class="col"><input type="text" placeholder="Serial Number" class="serial"></div>
-<div class="col"><input type="text" placeholder="Identify Problem" class="problem"></div>
-<div><button type="button" class="removeBtn" onclick="removeSerial(this)">Remove</button></div>
-`;
-serialContainer.appendChild(div);
+    let div = document.createElement("div");
+    div.classList.add("row");
+    div.innerHTML=`
+    <div class="col"><input type="text" placeholder="Serial Number" class="serial"></div>
+    <div class="col"><input type="text" placeholder="Identify Problem" class="problem"></div>
+    <div><button type="button" class="removeBtn" onclick="removeSerial(this)">Remove</button></div>`;
+    serialContainer.appendChild(div);
 }
 
 function removeSerial(btn){
-btn.parentElement.parentElement.remove();
+    btn.parentElement.parentElement.remove();
 }
-
-
-// ================= DISPATCH =================
-function submitDispatch(){
-
-let btn = document.getElementById("dispatchBtn");
-btn.disabled = true;
-btn.innerText = "Processing...";
-
-let serials=[];
-let s=document.getElementsByClassName("serial");
-let p=document.getElementsByClassName("problem");
-
-if(s.length===0){
-alert("Add at least one serial number");
-resetDispatchBtn();
-return;
-}
-
-for(let i=0;i<s.length;i++){
-if(!s[i].value){
-alert("Serial Number cannot be empty");
-resetDispatchBtn();
-return;
-}
-serials.push({serialNumber:s[i].value,problem:p[i].value});
-}
-
-fetch(WEB_APP_URL,{
-method:"POST",
-body:JSON.stringify({
-type:"dispatch",
-make:make.value,
-model:model.value,
-locationName:locationName.value,
-facilityEntity:facilityEntity.value,
-receivedMailSubject:receivedMailSubject.value,
-receivedDate:receivedDate.value,
-dispatchMailSubject:dispatchMailSubject.value,
-dispatchDocket:dispatchDocket.value,
-dispatchDate:dispatchDate.value,
-dispatchCourier:dispatchCourier.value,
-serials:serials
-})
-})
-.then(res=>res.json())
-.then(res=>{
-alert("Case Created: "+res.caseId);
-location.reload();
-})
-.catch(()=>{
-alert("Something went wrong");
-resetDispatchBtn();
-});
-}
-
-function resetDispatchBtn(){
-let btn=document.getElementById("dispatchBtn");
-btn.disabled=false;
-btn.innerText="Submit Dispatch";
-}
-
 
 // ================= SEARCH =================
 function searchDispatch(){
+    let btn = document.getElementById("searchBtn");
+    btn.disabled = true;
+    btn.innerText = "Searching...";
 
-fetch(WEB_APP_URL,{
-method:"POST",
-body:JSON.stringify({
-type:"searchDispatchMail",
-dispatchMailSubject:searchDispatchMail.value
-})
-})
-.then(res=>res.json())
-.then(data=>{
+    let searchValue = document.getElementById("searchDispatch").value.trim();
 
-selectedRows=[];
-let html="<table><tr><th>Select</th><th>Serial</th><th>Case ID</th></tr>";
+    if(!searchValue){
+        alert("Please enter Dispatch Mail Subject or Docket Number");
+        btn.disabled = false;
+        btn.innerText = "Search";
+        return;
+    }
 
-data.forEach(item=>{
-html+=`<tr>
-<td><input type="checkbox" value="${item.rowIndex}" onchange="toggleRow(this)"></td>
-<td>${item.serial}</td>
-<td>${item.caseId}</td>
-</tr>`;
-});
-
-html+="</table>";
-resultArea.innerHTML=html;
-});
+    fetch(WEB_APP_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            type:"searchDispatch",
+            searchValue: searchValue
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        selectedRows = [];
+        let html = "<table><tr><th>Select</th><th>Serial</th><th>Case ID</th><th>Status</th></tr>";
+        data.forEach(item => {
+            html += `<tr>
+            <td><input type="checkbox" value="${Number(item.rowIndex)}" onchange="toggleRow(this)"></td>
+            <td>${item.serial}</td>
+            <td>${item.caseId}</td>
+            <td>${item.status}</td>
+            </tr>`;
+        });
+        html += "</table>";
+        resultArea.innerHTML = html;
+        btn.disabled = false;
+        btn.innerText = "Search";
+    })
+    .catch(()=>{
+        alert("Error while searching");
+        btn.disabled = false;
+        btn.innerText = "Search";
+    });
 }
 
+// ================= TOGGLE ROWS =================
 function toggleRow(cb){
-let value=parseInt(cb.value);
-if(cb.checked){
-if(!selectedRows.includes(value)){
-selectedRows.push(value);
+    let value = Number(cb.value);
+    if(cb.checked){
+        if(!selectedRows.includes(value)){
+            selectedRows.push(value);
+        }
+    }else{
+        selectedRows = selectedRows.filter(r => r !== value);
+    }
+    console.log("Selected Rows:", selectedRows);
 }
-}else{
-selectedRows=selectedRows.filter(r=>r!==value);
-}
-}
-
 
 // ================= RECEIVE =================
 function submitReceive(){
+    let btn = document.getElementById("receiveBtn");
+    btn.disabled = true;
+    btn.innerText = "Processing...";
 
-let btn = document.getElementById("receiveBtn");
-btn.disabled = true;
-btn.innerText = "Processing...";
+    if(selectedRows.length === 0){
+        alert("Please select at least one serial");
+        resetReceiveBtn();
+        return;
+    }
 
-if(selectedRows.length===0){
-alert("Please select at least one serial");
-resetReceiveBtn();
-return;
-}
+    if(!receivedDatePostRepair.value){
+        alert("Please select Received Date Post Repair");
+        resetReceiveBtn();
+        return;
+    }
 
-if(!receivedDatePostRepair.value){
-alert("Please select Received Date Post Repair");
-resetReceiveBtn();
-return;
-}
-
-fetch(WEB_APP_URL,{
-method:"POST",
-body:JSON.stringify({
-type:"receive",
-dispatchMailSubject:searchDispatchMail.value,
-selectedRows:selectedRows,
-receivedDatePostRepair:receivedDatePostRepair.value,
-receiveDocket:receiveDocket.value,
-receiveCourier:receiveCourier.value
-})
-})
-.then(res=>res.json())
-.then(()=>{
-alert("Updated Successfully");
-location.reload();
-})
-.catch(()=>{
-alert("Something went wrong");
-resetReceiveBtn();
-});
+    fetch(WEB_APP_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            type:"receive",
+            dispatchMailSubject: searchDispatchMail.value,
+            selectedRows: selectedRows,
+            receivedDatePostRepair: receivedDatePostRepair.value,
+            receiveDocket: receiveDocket.value,
+            receiveCourier: receiveCourier.value
+        })
+    })
+    .then(res=>res.json())
+    .then(()=> {
+        alert("Updated Successfully");
+        location.reload();
+    })
+    .catch(()=>{
+        alert("Something went wrong");
+        resetReceiveBtn();
+    });
 }
 
 function resetReceiveBtn(){
-let btn=document.getElementById("receiveBtn");
-btn.disabled=false;
-btn.innerText="Mark as Received";
+    let btn = document.getElementById("receiveBtn");
+    btn.disabled = false;
+    btn.innerText = "Mark as Received";
 }
-
 </script>
+
 </body>
 </html>
