@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+
+.error {
+  border: 2px solid red !important;
+}
+
 body {font-family: Arial; background:#f4f6f9; margin:0;}
 .container {max-width:1100px; width:95%; margin:20px auto; background:white; padding:25px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .row {display:flex; gap:15px; margin-bottom:10px; flex-wrap:wrap; align-items:center;}
@@ -134,7 +139,27 @@ th {background:#2c7be5; color:white;}
 
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuceQM7A5zGBeZoexD5QKK2CInGYomKe6XBMkURe3jIRFm8sAakDxwJ5BKbtCNnZRnBg/exec";
+
 let selectedRows = [];
+
+function validateField(field){
+    if(!field.value || field.value.trim() === ""){
+        field.classList.add("error");
+        return false;
+    } else {
+        field.classList.remove("error");
+        return true;
+    }
+}
+
+function clearErrorOnInput(field){
+    field.addEventListener("input", function(){
+        if(field.value.trim() !== ""){
+            field.classList.remove("error");
+        }
+    });
+}
+
 
 function switchMode(){
     let mode = document.getElementById("mode").value;
@@ -217,23 +242,50 @@ function submitReceive(){
     btn.disabled = true;
     btn.innerText = "Processing...";
 
-    if(selectedRows.length === 0){ alert("Please select at least one serial"); resetReceiveBtn(); return; }
-    if(!receivedDatePostRepair.value){ alert("Please select Received Date Post Repair"); resetReceiveBtn(); return; }
+    let requiredFields = [
+        receivedDatePostRepair,
+        receiveDocket,
+        receiveCourier
+    ];
+
+    let isValid = true;
+
+    requiredFields.forEach(field=>{
+        if(!validateField(field)) isValid = false;
+        clearErrorOnInput(field);
+    });
+
+    if(selectedRows.length === 0){
+        alert("Please select at least one serial");
+        resetReceiveBtn();
+        return;
+    }
+
+    if(!isValid){
+        alert("Please fill all required fields");
+        resetReceiveBtn();
+        return;
+    }
 
     fetch(WEB_APP_URL,{
         method:"POST",
         body: JSON.stringify({
             type: "receive",
-            dispatchMailSubject: searchDispatch.value,
             selectedRows: selectedRows,
             receivedDatePostRepair: receivedDatePostRepair.value,
             receiveDocket: receiveDocket.value,
             receiveCourier: receiveCourier.value
         })
-    }).then(res=>res.json()).then(()=>{ alert("Updated Successfully"); location.reload(); })
-      .catch(()=>{ alert("Something went wrong"); resetReceiveBtn(); });
+    }).then(res=>res.json())
+      .then(()=>{
+          alert("Updated Successfully");
+          location.reload();
+      })
+      .catch(()=>{
+          alert("Something went wrong");
+          resetReceiveBtn();
+      });
 }
-function resetReceiveBtn(){ let btn = document.getElementById("receiveBtn"); btn.disabled=false; btn.innerText="Mark as Received"; }
 
 // ================= DISPATCH SUBMIT =================
 function submitDispatch(){
@@ -241,30 +293,63 @@ function submitDispatch(){
     btn.disabled = true;
     btn.innerText = "Processing...";
 
-    let regionValue = document.getElementById("region").value;
-    if(!regionValue){ alert("Please select a region"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+    let requiredFields = [
+        region, make, model,
+        locationName, facilityEntity,
+        receivedMailSubject, receivedDate,
+        dispatchMailSubject, dispatchDocket,
+        dispatchDate, dispatchCourier
+    ];
 
+    let isValid = true;
+
+    requiredFields.forEach(field => {
+        if(!validateField(field)) isValid = false;
+        clearErrorOnInput(field);
+    });
+
+    // Validate serial numbers
     let serials = [];
     let s = document.getElementsByClassName("serial");
     let p = document.getElementsByClassName("problem");
-    if(s.length===0){ alert("Add at least one serial number"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+
+    if(s.length === 0){
+        alert("Add at least one serial number");
+        resetDispatchBtn();
+        return;
+    }
 
     for(let i=0;i<s.length;i++){
-        if(!s[i].value){ alert("Serial Number cannot be empty"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+        if(!validateField(s[i])) isValid = false;
+        if(!validateField(p[i])) isValid = false;
+
+        clearErrorOnInput(s[i]);
+        clearErrorOnInput(p[i]);
+
         serials.push({serialNumber:s[i].value, problem:p[i].value});
     }
 
+    // Validate RMA for Newland
     let caseIdToSend = "";
-    if(document.getElementById("make").value === "Newland"){
-        caseIdToSend = document.getElementById("caseId").value.trim();
-        if(!caseIdToSend){ alert("Please enter RMA Number for Newland"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+    if(make.value === "Newland"){
+        if(!validateField(caseId)){
+            isValid = false;
+        }
+        clearErrorOnInput(caseId);
+        caseIdToSend = caseId.value.trim();
+    }
+
+    if(!isValid){
+        alert("Please fill all required fields");
+        resetDispatchBtn();
+        return;
     }
 
     fetch(WEB_APP_URL,{
         method:"POST",
         body: JSON.stringify({
             type:"dispatch",
-            region: regionValue,
+            region: region.value,
             make: make.value,
             model: model.value,
             locationName: locationName.value,
@@ -278,9 +363,23 @@ function submitDispatch(){
             serials: serials,
             caseId: caseIdToSend
         })
-    }).then(res=>res.json()).then(res=>{ alert("Case Created: "+res.caseId); location.reload(); })
-      .catch(()=>{ alert("Something went wrong"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; });
+    }).then(res=>res.json())
+      .then(res=>{
+          alert("Case Created: "+res.caseId);
+          location.reload();
+      })
+      .catch(()=>{
+          alert("Something went wrong");
+          resetDispatchBtn();
+      });
 }
+
+function resetDispatchBtn(){
+    let btn = document.getElementById("dispatchBtn");
+    btn.disabled=false;
+    btn.innerText="Submit Dispatch Details";
+}
+
 </script>
 
 </body>
