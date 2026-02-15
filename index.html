@@ -2,7 +2,6 @@
 <html>
 <head>
 <title>HDD Repair Tracking</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -30,65 +29,78 @@ th {background:#2c7be5; color:white;}
 <h2>HDD Repair Tracking System</h2>
 
 <select id="mode" onchange="switchMode()">
-<option value="dispatch">Dispatch to Service Centre</option>
-<option value="receive">Receive After Repair</option>
+  <option value="dispatch">Dispatch to Service Centre</option>
+  <option value="receive">Receive After Repair</option>
 </select>
 
 <!-- ================= DISPATCH SECTION ================= -->
 <div id="dispatchSection">
 
 <div class="row">
-<div class="col">
-<select id="make">
-<option value="">Select Make</option>
-<option value="Urovo">Urovo</option>
-<option value="Newland">Newland</option>
-</select>
+  <div class="col">
+    <select id="region">
+      <option value="">Select Region</option>
+      <option value="North">North</option>
+      <option value="South">South</option>
+      <option value="East">East</option>
+      <option value="West">West</option>
+    </select>
+  </div>
+  <div class="col">
+    <select id="make">
+      <option value="">Select Make</option>
+      <option value="Urovo">Urovo</option>
+      <option value="Newland">Newland</option>
+    </select>
+  </div>
+  <div class="col"><input type="text" id="model" placeholder="Model"></div>
 </div>
 
-<div class="col"><input type="text" id="model" placeholder="Model"></div>
+<!-- Case ID / RMA -->
+<div class="row">
+  <div class="col"><input type="text" id="caseId" placeholder=" RMA Number " disabled></div>
 </div>
 
 <div id="serialContainer"></div>
 <button type="button" onclick="addSerial()">Add Serial Number</button>
 
 <div class="row">
-<div class="col"><input type="text" id="locationName" placeholder="Location Name"></div>
-<div class="col">
-<select id="facilityEntity">
-<option value="">Select Facility Entity</option>
-<option value="WHS">WHS</option>
-<option value="CPC">CPC</option>
-<option value="HP">HP</option>
-</select>
-</div>
+  <div class="col"><input type="text" id="locationName" placeholder="Location Name"></div>
+  <div class="col">
+    <select id="facilityEntity">
+      <option value="">Select Facility Entity</option>
+      <option value="WHS">WHS</option>
+      <option value="CPC">CPC</option>
+      <option value="HP">HP</option>
+    </select>
+  </div>
 </div>
 
 <div class="row">
-<div class="col"><input type="text" id="receivedMailSubject" placeholder="Received Mail Subject from Operations"></div>
-<div class="col"><input type="text"
+  <div class="col"><input type="text" id="receivedMailSubject" placeholder="Received Mail Subject from Operations"></div>
+  <div class="col"><input type="text"
        id="receivedDate"
        placeholder="Received Date from Operations"
        onclick="this.showPicker ? this.showPicker() : this.focus()"
        onfocus="this.type='date'; this.showPicker && this.showPicker()"
        onblur="if(!this.value)this.type='text'">
-</div>
-</div>
-
-<div class="row">
-<div class="col"><input type="text" id="dispatchMailSubject" placeholder="Dispatch Mail Subject"></div>
-<div class="col"><input type="text" id="dispatchDocket" placeholder="Dispatch Docket Number"></div>
+  </div>
 </div>
 
 <div class="row">
-<div class="col"><input type="text"
+  <div class="col"><input type="text" id="dispatchMailSubject" placeholder="Dispatch Mail Subject"></div>
+  <div class="col"><input type="text" id="dispatchDocket" placeholder="Dispatch Docket Number"></div>
+</div>
+
+<div class="row">
+  <div class="col"><input type="text"
        id="dispatchDate"
        placeholder="Dispatch Date - Service Centre"
        onclick="this.showPicker ? this.showPicker() : this.focus()"
        onfocus="this.type='date'; this.showPicker && this.showPicker()"
        onblur="if(!this.value)this.type='text'">
-</div>
-<div class="col"><input type="text" id="dispatchCourier" placeholder="Dispatch Courier Partner Name"></div>
+  </div>
+  <div class="col"><input type="text" id="dispatchCourier" placeholder="Dispatch Courier Partner Name"></div>
 </div>
 
 <button type="button" id="dispatchBtn" onclick="submitDispatch()">Submit Dispatch Details</button>
@@ -101,19 +113,18 @@ th {background:#2c7be5; color:white;}
 <input type="text" id="searchDispatch" placeholder="Enter Dispatch Mail Subject or Docket Number">
 <button type="button" id="searchBtn" onclick="searchDispatch()">Search</button>
 
-
 <div id="resultArea"></div>
 
 <div class="row">
-<div class="col"><input type="text"
+  <div class="col"><input type="text"
        id="receivedDatePostRepair"
        placeholder="Received Date Post Repair"
        onclick="this.showPicker ? this.showPicker() : this.focus()"
        onfocus="this.type='date'; this.showPicker && this.showPicker()"
        onblur="if(!this.value)this.type='text'">
-</div>
-<div class="col"><input type="text" id="receiveDocket" placeholder="Receive Docket Number"></div>
-<div class="col"><input type="text" id="receiveCourier" placeholder="Receive Courier Partner Name"></div>
+  </div>
+  <div class="col"><input type="text" id="receiveDocket" placeholder="Receive Docket Number"></div>
+  <div class="col"><input type="text" id="receiveCourier" placeholder="Receive Courier Partner Name"></div>
 </div>
 
 <button type="button" id="receiveBtn" onclick="submitReceive()">Mark as Received</button>
@@ -123,7 +134,6 @@ th {background:#2c7be5; color:white;}
 
 <script>
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuceQM7A5zGBeZoexD5QKK2CInGYomKe6XBMkURe3jIRFm8sAakDxwJ5BKbtCNnZRnBg/exec";
-
 let selectedRows = [];
 
 function switchMode(){
@@ -132,19 +142,32 @@ function switchMode(){
     receiveSection.classList.toggle("hidden", mode !== "receive");
 }
 
+// Add serial row
 function addSerial(){
     let div = document.createElement("div");
     div.classList.add("row");
-    div.innerHTML=`
-    <div class="col"><input type="text" placeholder="Serial Number" class="serial"></div>
+    div.innerHTML=`<div class="col"><input type="text" placeholder="Serial Number" class="serial"></div>
     <div class="col"><input type="text" placeholder="Identify Problem" class="problem"></div>
     <div><button type="button" class="removeBtn" onclick="removeSerial(this)">Remove</button></div>`;
     serialContainer.appendChild(div);
 }
+function removeSerial(btn){ btn.parentElement.parentElement.remove(); }
 
-function removeSerial(btn){
-    btn.parentElement.parentElement.remove();
-}
+// ===== CASE ID / RMA based on Make =====
+document.getElementById("make").addEventListener("change", function(){
+    let make = this.value;
+    let caseInput = document.getElementById("caseId");
+    if(make === "Urovo"){
+        caseInput.value = "Auto-generated";
+        caseInput.disabled = true;
+    } else if(make === "Newland"){
+        caseInput.value = "";
+        caseInput.disabled = false;
+    } else {
+        caseInput.value = "";
+        caseInput.disabled = true;
+    }
+});
 
 // ================= SEARCH =================
 function searchDispatch(){
@@ -153,7 +176,6 @@ function searchDispatch(){
     btn.innerText = "Searching...";
 
     let searchValue = document.getElementById("searchDispatch").value.trim();
-
     if(!searchValue){
         alert("Please enter Dispatch Mail Subject or Docket Number");
         btn.disabled = false;
@@ -163,13 +185,8 @@ function searchDispatch(){
 
     fetch(WEB_APP_URL,{
         method:"POST",
-        body:JSON.stringify({
-            type:"searchDispatch",
-            searchValue: searchValue
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
+        body:JSON.stringify({type:"searchDispatch", searchValue: searchValue})
+    }).then(res => res.json()).then(data => {
         selectedRows = [];
         let html = "<table><tr><th>Select</th><th>Serial</th><th>Case ID</th><th>Status</th></tr>";
         data.forEach(item => {
@@ -184,25 +201,14 @@ function searchDispatch(){
         resultArea.innerHTML = html;
         btn.disabled = false;
         btn.innerText = "Search";
-    })
-    .catch(()=>{
-        alert("Error while searching");
-        btn.disabled = false;
-        btn.innerText = "Search";
-    });
+    }).catch(()=>{ alert("Error while searching"); btn.disabled = false; btn.innerText = "Search"; });
 }
 
-// ================= TOGGLE ROWS =================
+// Toggle row selection
 function toggleRow(cb){
     let value = Number(cb.value);
-    if(cb.checked){
-        if(!selectedRows.includes(value)){
-            selectedRows.push(value);
-        }
-    }else{
-        selectedRows = selectedRows.filter(r => r !== value);
-    }
-    console.log("Selected Rows:", selectedRows);
+    if(cb.checked){ if(!selectedRows.includes(value)) selectedRows.push(value); }
+    else{ selectedRows = selectedRows.filter(r => r !== value); }
 }
 
 // ================= RECEIVE =================
@@ -211,44 +217,69 @@ function submitReceive(){
     btn.disabled = true;
     btn.innerText = "Processing...";
 
-    if(selectedRows.length === 0){
-        alert("Please select at least one serial");
-        resetReceiveBtn();
-        return;
+    if(selectedRows.length === 0){ alert("Please select at least one serial"); resetReceiveBtn(); return; }
+    if(!receivedDatePostRepair.value){ alert("Please select Received Date Post Repair"); resetReceiveBtn(); return; }
+
+    fetch(WEB_APP_URL,{
+        method:"POST",
+        body: JSON.stringify({
+            type: "receive",
+            dispatchMailSubject: searchDispatch.value,
+            selectedRows: selectedRows,
+            receivedDatePostRepair: receivedDatePostRepair.value,
+            receiveDocket: receiveDocket.value,
+            receiveCourier: receiveCourier.value
+        })
+    }).then(res=>res.json()).then(()=>{ alert("Updated Successfully"); location.reload(); })
+      .catch(()=>{ alert("Something went wrong"); resetReceiveBtn(); });
+}
+function resetReceiveBtn(){ let btn = document.getElementById("receiveBtn"); btn.disabled=false; btn.innerText="Mark as Received"; }
+
+// ================= DISPATCH SUBMIT =================
+function submitDispatch(){
+    let btn = document.getElementById("dispatchBtn");
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+
+    let regionValue = document.getElementById("region").value;
+    if(!regionValue){ alert("Please select a region"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+
+    let serials = [];
+    let s = document.getElementsByClassName("serial");
+    let p = document.getElementsByClassName("problem");
+    if(s.length===0){ alert("Add at least one serial number"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+
+    for(let i=0;i<s.length;i++){
+        if(!s[i].value){ alert("Serial Number cannot be empty"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
+        serials.push({serialNumber:s[i].value, problem:p[i].value});
     }
 
-    if(!receivedDatePostRepair.value){
-        alert("Please select Received Date Post Repair");
-        resetReceiveBtn();
-        return;
+    let caseIdToSend = "";
+    if(document.getElementById("make").value === "Newland"){
+        caseIdToSend = document.getElementById("caseId").value.trim();
+        if(!caseIdToSend){ alert("Please enter RMA Number for Newland"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; return; }
     }
 
     fetch(WEB_APP_URL,{
         method:"POST",
-     body: JSON.stringify({
-    type: "receive",
-    dispatchMailSubject: searchDispatch.value, // or searchDispatchMail.value
-    selectedRows: selectedRows,
-    receivedDatePostRepair: receivedDatePostRepair.value,
-    receiveDocket: receiveDocket.value,
-    receiveCourier: receiveCourier.value
-})
-    })
-    .then(res=>res.json())
-    .then(()=> {
-        alert("Updated Successfully");
-        location.reload();
-    })
-    .catch(()=>{
-        alert("Something went wrong");
-        resetReceiveBtn();
-    });
-}
-
-function resetReceiveBtn(){
-    let btn = document.getElementById("receiveBtn");
-    btn.disabled = false;
-    btn.innerText = "Mark as Received";
+        body: JSON.stringify({
+            type:"dispatch",
+            region: regionValue,
+            make: make.value,
+            model: model.value,
+            locationName: locationName.value,
+            facilityEntity: facilityEntity.value,
+            receivedMailSubject: receivedMailSubject.value,
+            receivedDate: receivedDate.value,
+            dispatchMailSubject: dispatchMailSubject.value,
+            dispatchDocket: dispatchDocket.value,
+            dispatchDate: dispatchDate.value,
+            dispatchCourier: dispatchCourier.value,
+            serials: serials,
+            caseId: caseIdToSend
+        })
+    }).then(res=>res.json()).then(res=>{ alert("Case Created: "+res.caseId); location.reload(); })
+      .catch(()=>{ alert("Something went wrong"); btn.disabled=false; btn.innerText="Submit Dispatch Details"; });
 }
 </script>
 
